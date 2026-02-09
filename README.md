@@ -84,5 +84,5 @@ COVID-Radiology-Study/
 
 ```bash
 pip install -r requirements.txt
-jupyter notebook notebook/COVID_Submission_code.ipynb
+python -m src.run --config configs/default.yaml
 ```

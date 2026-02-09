@@ -1,0 +1,350 @@
+# ============================================================
+# COVID Radiology Study — default experiment config (from notebook)
+# Pediatric CXR impression text + incremental RF models + SHAP
+# ============================================================
+
+project:
+  name: "covid-radiology-study"
+  random_seed: 20                # notebook uses random_state=20 for splits
+  output_dir: "outputs"
+  figures_dir: "figures"
+  run_name: "notebook_faithful"
+
+data:
+  # Read multiple CSVs (CXR impressions + demos + ROS + problem list).
+  paths:
+    pre_post_scans: "data/pre_post_scans.csv"
+    all_positive_scans: "data/all_positive_scans.csv"
+    negative_scans: "data/negative_scans.csv"
+    demo_negative: "data/demo_negative.csv"
+    demo_positive: "data/demo_pos.csv"
+    ros_negative: "data/neg_scans_ros_deID.csv"
+    ros_positive: "data/pos_scans_ros_deID.csv"
+    anonymized_ids: "data/anonymized_ids.csv"
+    all_scans_problem_list: "data/all_scans_problem_list.csv"
+    pos_scans_problem_list: "data/pos_scans_pl_cats.csv"
+    neg_scans_problem_list: "data/neg_pl_cats_deID.csv"
+
+  id_col: "pat_id"
+  target_col: "covid_pos"      # 0/1
+  variant_col: "variant"         # values like Alpha/Delta/Omicron
+
+variant_proxy:
+  label_as_proxy: true
+  note: "Variant inferred/assigned by date/metadata; not sequencing-confirmed."
+
+labels:
+  # Construct new_finding using "stable_terms" and "normal_terms":
+  # - if contains stable phrase -> stable (new_finding=0)
+  # - if contains normal phrase -> normal (new_finding=0)
+  # - else -> unstable/new finding (new_finding=1)
+  new_finding_from_text:
+    enabled: true
+    normal_terms:
+      - "no radiographic evidence pneumonia"
+      - "lungs grossly clear. no focal opacification."
+      - "no definite radiographic evidence pneumonia"
+      - "normal lungs"
+      - "no radiographic evidence infiltrate pneumonia"
+      - "the lungs expanded. no definite focal consolidation"
+    stable_terms:
+      - "stable chest"
+      - "no evidence acute cardiopulmonary disease"
+      - "slightly improved aeration. otherwise unchanged"
+      - "lungs clear"
+      - "no significant change"
+      - "no focal pneumonia"
+      - "stable lung"
+      - "clear lungs"
+      - "within normal limits"
+      - "stable exam"
+      - "lungs well-expanded"
+    # If text matches neither stable nor normal -> new_finding = 1
+    default_new_finding_value: 1
+
+text_processing:
+  lowercase: true
+  normalize_whitespace: true
+
+  # Your notebook uses clinical NER (spacy_stanza i2b2) + negex
+  ner:
+    enabled: true
+    engine: "spacy_stanza"
+    package: "mimic"
+    processors:
+      ner: "i2b2"
+    negation:
+      enabled: true
+      pipe: "negex"
+      ent_types: ["PROBLEM", "TEST", "TREATMENT", "DISEASE"]
+      # Your notebook extends termset("en_clinical") with extra patterns
+      add_patterns:
+        preceding_negations:
+          - "abstain from"
+          - "other than"
+          - "except for"
+          - "except"
+          - "with the exception of"
+          - "excluding"
+          - "lack of"
+          - "contraindication"
+          - "contraindicated"
+          - "interfere with"
+          - "prohibit"
+          - "prohibits"
+        following_negations:
+          - "negative"
+          - "is allowed"
+          - "impossible"
+          - "exclusionary"
+
+radiology_features:
+  # These are the categories used in your notebook (CATEGORIES)
+  categories:
+    - "catheter"
+    - "pleural space"
+    - "air trapping"
+    - "atelectasis"
+    - "neurologic"
+    - "congenital"
+    - "pneumonia"
+    - "edema"
+    - "effusion"
+    - "vascular congestion"
+    - "small airways disease"
+    - "pneumothorax"
+
+  # Synonym normalization (SYNONYM_MAP in notebook)
+  synonym_map:
+    "line": "catheter"
+    "picc": "catheter"
+
+    "small airway disease": "small airways disease"
+    "small airways reactivity": "small airways disease"
+    "bronchial wall thickening": "small airways disease"
+    "peribronchial thickening": "small airways disease"
+
+    "cardiac": "neurologic"
+
+    "consolidation": "pneumonia"
+    "infiltrate": "pneumonia"
+    "opacity": "pneumonia"
+    "opacities": "pneumonia"
+
+  # Keep ordering consistent with your notebook’s desired_order_list
+  desired_feature_order:
+    - "air trapping"
+    - "atelectasis"
+    - "catheter"
+    - "congenital"
+    - "edema"
+    - "effusion"
+    - "neurologic"
+    - "pleural space"
+    - "pneumonia"
+    - "pneumothorax"
+    - "small airways disease"
+    - "vascular congestion"
+
+symptoms:
+  # In notebook you filter ROS to a chosen set of symptom strings,
+  # then create wide columns and rename them to compact names.
+  enabled: true
+
+  # Renaming map (final_ros_chosen.rename(...))
+  rename_map:
+    "SYMPTOMS - HENT - SINO-NASAL SYMPTOMS - RHINORRHEA": "SYMP-Hent-SNS"
+    "SYMPTOMS - CONSTITUTIONAL - CHILLS": "SYMP-Const-Chills"
+    "SYMPTOMS - CONSTITUTIONAL - DIAPHORESIS": "SYMP-Const-DP"
+    "SYMPTOMS - CONSTITUTIONAL - SLEEP - SLEEP DISTURBANCE": "SYMP-Const-SD"
+    "SYMPTOMS - GASTROINTESTINAL - DIARRHEA": "SYMP-GI-Dia"
+    "SYMPTOMS - HENT - HEAD - HEADACHES": "SYMP-Hent-HA"
+    "SYMPTOMS - GASTROINTESTINAL - BLOOD IN STOOL": "SYMP-GI-BIS"
+    "SYMPTOMS - CONSTITUTIONAL - CONSTITUTIONAL NEGATIVE": "SYMP-Const-CN"
+    "SYMPTOMS - RESPIRATORY - CHOKING": "SYMP-Resp-Chok"
+    "SYMPTOMS - CONSTITUTIONAL - ACTIVITY CHANGE": "SYMP-Const-AC"
+    "SYMPTOMS - GASTROINTESTINAL - GASTROINTESTINAL NEGATIVE": "SYMP-GI-GIN"
+    "SYMPTOMS - CONSTITUTIONAL - APPETITE CHANGE": "SYMP-Const-AppChng"
+    "SYMPTOMS - RESPIRATORY - SHORTNESS OF BREATH": "SYMP-Resp-SOB"
+    "SYMPTOMS - HENT - SINO-NASAL SYMPTOMS - CONGESTION": "SYMP-Hent-SNS-Cong"
+    "SYMPTOMS - RESPIRATORY - CHEST TIGHTNESS": "SYMP-Resp-CT"
+    "SYMPTOMS - CONSTITUTIONAL - FATIGUE - FATIGUE WITH FEEDS": "SYMP-Const-FWF"
+    "SYMPTOMS - HENT - SINO-NASAL SYMPTOMS - SNEEZING": "SYMP-Hent-SNS-Snz"
+    "SYMPTOMS - CONSTITUTIONAL - WEIGHT TREND - WEIGHT CHANGE - UNEXPECTED WEIGHT CHANGE": "SYMP-Const-WC"
+    "SYMPTOMS - RESPIRATORY - RESPIRATORY NEGATIVE": "SYMP-Resp-RN"
+    "SYMPTOMS - RESPIRATORY - WHEEZING": "SYMP-Resp-Wheez"
+    "SYMPTOMS - CONSTITUTIONAL - IRRITABILITY": "SYMP-Const-Irri"
+    "SYMPTOMS - RESPIRATORY - COUGH": "SYMP-Resp-Cough"
+    "SYMPTOMS - GASTROINTESTINAL - CONSTIPATION": "SYMP-GI-Const"
+    "SYMPTOMS - CONSTITUTIONAL - FEVER": "SYMP-Const-Fever"
+    "SYMPTOMS - RESPIRATORY - STRIDOR": "SYMP-Resp-SD"
+    "SYMPTOMS - CONSTITUTIONAL - FATIGUE": "SYMP-Const-Fati"
+    "SYMPTOMS - HENT - THROAT SYMPTOMS - SORE THROAT": "SYMP-Hent-TS-SoreTh"
+    "SYMPTOMS - HENT - HEAD - MOUTH SYMPTOMS - DROOLING": "SYMP-Hent-Drool"
+    "SYMPTOMS - HENT - HENT NEGATIVE": "SYMP-Hent-HN"
+    "SYMPTOMS - GASTROINTESTINAL - ABDOMINAL PAIN": "SYMP-GI-AP"
+    "SYMPTOMS - GASTROINTESTINAL - ABDOMINAL DISTENTION": "SYMP-GI-AD"
+    "SYMPTOMS - GASTROINTESTINAL - NAUSEA": "SYMP-GI-Nau"
+    "SYMPTOMS - RESPIRATORY - APNEA": "SYMP-Resp-Apnea"
+    "SYMPTOMS - GASTROINTESTINAL - VOMITING": "SYMP-GI-Vomit"
+    "SYMPTOMS - CONSTITUTIONAL - DECREASED ENERGY": "SYMP-Const-DE"
+
+  # Final symptom feature columns used downstream (post-rename)
+  feature_cols:
+    - "SYMP-Hent-SNS"
+    - "SYMP-Const-Chills"
+    - "SYMP-Const-DP"
+    - "SYMP-Const-SD"
+    - "SYMP-GI-Dia"
+    - "SYMP-Hent-HA"
+    - "SYMP-GI-BIS"
+    - "SYMP-Const-CN"
+    - "SYMP-Resp-Chok"
+    - "SYMP-Const-AC"
+    - "SYMP-GI-GIN"
+    - "SYMP-Const-AppChng"
+    - "SYMP-Resp-SOB"
+    - "SYMP-Hent-SNS-Cong"
+    - "SYMP-Resp-CT"
+    - "SYMP-Const-FWF"
+    - "SYMP-Hent-SNS-Snz"
+    - "SYMP-Const-WC"
+    - "SYMP-Resp-RN"
+    - "SYMP-Resp-Wheez"
+    - "SYMP-Const-Irri"
+    - "SYMP-Resp-Cough"
+    - "SYMP-GI-Const"
+    - "SYMP-Const-Fever"
+    - "SYMP-Resp-SD"
+    - "SYMP-Const-Fati"
+    - "SYMP-Hent-TS-SoreTh"
+    - "SYMP-Hent-Drool"
+    - "SYMP-Hent-HN"
+    - "SYMP-GI-AP"
+    - "SYMP-GI-AD"
+    - "SYMP-GI-Nau"
+    - "SYMP-Resp-Apnea"
+    - "SYMP-GI-Vomit"
+    - "SYMP-Const-DE"
+
+demographics:
+  enabled: true
+  # Notebook-derived features used in final_ros_chosen_demo
+  derived_cols:
+    - "IsHispanic"
+    - "IsMale"
+    - "IsBlack"
+    - "IsAsian"
+    - "IsWhite"
+    - "IsOther"
+    - "IsNHPI"
+    - "age-lt-mean"   # age <= 8.12
+
+history:
+  enabled: true
+  # Problem-list bucket columns used in notebook (HD-* renamed ICD buckets)
+  feature_cols:
+    - "HD-InfAndPar"
+    - "HD-Neoplasms"
+    - "HD-BldAndImm"
+    - "HD-ENM"
+    - "HD-MBAndND"
+    - "HD-NS"
+    - "HD-EyeAndAd"
+    - "HD-EarAndMas"
+    - "HD-CirSys"
+    - "HD-RespSys"
+    - "HD-DigSys"
+    - "HD-Skin"
+    - "HD-MS"
+    - "HD-GU"
+    - "HD-Pregnancy"
+    - "HD-PeriN"
+    - "HD-ConMal"
+    - "HD-NCE"
+    - "HD-Ext"
+    - "HD-SP"
+    - "HD-HSSC"
+
+features:
+  # This matches your notebook’s “models” conceptually:
+  # 1) CXRi only
+  # 2) CXRi + ROS + demo
+  # 3) everything except CXRi
+  # 4) ROS + demo + disease history
+  # 5) baseline subset analysis
+  model_set: 2
+
+  sets:
+    1:
+      name: "CXRi_only"
+      include: ["radiology_features"]
+    2:
+      name: "CXRi_plus_ROS_plus_demo"
+      include: ["radiology_features", "symptoms", "demographics", "variant"]
+    3:
+      name: "except_CXRi"
+      include: ["symptoms", "demographics", "variant"]   # matches except_cxri table logic
+    4:
+      name: "ROS_demo_plus_history"
+      include: ["radiology_features", "symptoms", "demographics", "variant", "history"]
+    5:
+      name: "baseline_CXRi_subset"
+      include: ["radiology_features"]                    # baseline subset in notebook
+
+splits:
+  strategy: "group_kfold"
+  n_splits: 5
+  group_col: "pat_id"
+  random_state: 20
+
+missingness:
+  strategy: "impute"              # ["drop", "impute"]
+  report: true
+  numeric_imputer: "median"
+  categorical_imputer: "most_frequent"
+
+pipeline:
+  enabled: true
+  cache_dir: "outputs/cache"     
+  one_hot_encode_categoricals: true
+
+model:
+  type: "random_forest"
+  params:
+    n_estimators: 500
+    class_weight: "balanced"
+    random_state: 20
+    n_jobs: -1
+  grid_search:
+    enabled: true
+    scoring: "f1"
+    cv: 5
+    param_grid:
+      n_estimators: [200, 500]
+      max_depth: [null, 8, 16, 32]
+      min_samples_split: [2, 5, 10]
+      min_samples_leaf: [1, 2, 4]
+      max_features: ["sqrt", "log2", null]
+      bootstrap: [true]
+
+evaluation:
+  threshold:
+    enabled: true
+    method: "f1_opt"  
+
+explainability:
+  shap:
+    enabled: true
+    explainer: "tree"
+    max_samples: 500
+    random_state: 20
+    per_variant:
+      enabled: true
+      variants: ["Alpha", "Delta", "Omicron"]
+
+logging:
+  save_metrics_csv: true
+  save_model: true
+  save_predictions: true
+  verbose: true
