@@ -17,8 +17,6 @@ This repository contains the analysis pipeline used to:
 ## Repository layout
 
 - `notebook/` – primary Colab/Jupyter notebook reproducing the analysis
-- `scripts/` – optional cleaned Python script version
-- `data/` – placeholder only (real data not public)
 - `figures/` – example outputs and visualizations
 
 ## Data availability
@@ -31,3 +29,4 @@ privacy restrictions. See the PLOS ONE article for details.
 ```bash
 pip install -r requirements.txt
 jupyter notebook notebook/COVID_Submission_code.ipynb
+```
