@@ -52,7 +52,7 @@ privacy restrictions. See the PLOS ONE article for details.
 ---
 
 ## Repository layout
-
+```
 COVID-Radiology-Study/
 ├── README.md
 ├── CONCLUSION.md
@@ -77,7 +77,7 @@ COVID-Radiology-Study/
     ├── study_design.png             # Workflow / categorization diagram
     ├── feature_importance.png       # SHAP summary
     └── roc_curves.png
-
+```
 
 
 
