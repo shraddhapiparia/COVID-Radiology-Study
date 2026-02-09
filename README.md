@@ -56,8 +56,6 @@ privacy restrictions. See the PLOS ONE article for details.
 COVID-Radiology-Study/
 ├── README.md
 ├── CONCLUSION.md
-├── LICENSE
-├── CITATION.cff
 ├── requirements.txt
 │
 ├── notebooks/
