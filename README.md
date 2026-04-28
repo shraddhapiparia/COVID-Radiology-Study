@@ -58,7 +58,7 @@ COVID-Radiology-Study/
 ├── CONCLUSION.md
 ├── requirements.txt
 │
-├── notebooks/
+├── notebook/
 │   └── analysis.ipynb            # Original analysis notebook
 │
 ├── src/
@@ -83,6 +83,6 @@ COVID-Radiology-Study/
 ## Running locally
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirement.txt
 python -m src.run --config configs/default.yaml
 ```
