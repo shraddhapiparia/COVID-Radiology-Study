@@ -45,7 +45,7 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 Run the synthetic demo:
-```
+```bash
 python -m src.run --config configs/demo.yaml
 ```
 Expected outputs are written to:
@@ -158,24 +158,42 @@ The publication workflow includes model interpretation using feature importance 
 ---
 
 ## Repository layout
-```
+
+```text
 COVID-Radiology-Study/
 ├── README.md
 ├── CONCLUSION.md
 ├── requirements.txt
 │
-├── notebook/
-│   └── analysis.ipynb            # Original analysis notebook
+├── configs/
+│   ├── default.yaml                 # Publication-oriented configuration
+│   └── demo.yaml                    # Public synthetic demo configuration
+│
+├── data/
+│   ├── README.md
+│   └── synthetic/
+│       └── demo_cxr_impressions.csv # Synthetic demo input data
 │
 ├── src/
-│   ├── text_processing.py           # CXR impression parsing, keyword extraction
-│   ├── feature_engineering.py       # Incremental feature sets (Model 1–5)
-│   ├── train.py                     # Random Forest training + CV
-│   ├── evaluate.py                  # Metrics, ROC
-│   └── explain.py                   # SHAP analysis
+│   ├── config.py                    # Configuration loading helpers
+│   ├── io_data.py                   # Input/output data utilities
+│   ├── preprocess.py                # Data preprocessing helpers
+│   ├── clinical_features.py         # Radiology, symptom, demographic, and history features
+│   ├── features.py                  # Modeling feature-set construction
+│   ├── modeling.py                  # Random Forest training
+│   ├── evaluate.py                  # Metrics and evaluation outputs
+│   ├── explain.py                   # Feature importance and SHAP outputs
+│   └── run.py                       # Command-line pipeline entry point
 │
-├── configs/
-│   └── default.yaml                 # Hyperparameters, paths
+├── tests/
+│   ├── conftest.py
+│   ├── test_config.py
+│   ├── test_clinical_features.py
+│   └── test_demo_pipeline.py
+│
+└── outputs/
+    └── demo/
+        └── synthetic_demo/          # Generated demo outputs, ignored by git
 │
 └── figures/
     ├── study_design.png             # Workflow / categorization diagram
@@ -183,6 +201,11 @@ COVID-Radiology-Study/
     └── roc_curves.png
 ```
 
+Run tests:
+
+```bash
+pytest -q
+```
 ---
 
 ## Configuration files
