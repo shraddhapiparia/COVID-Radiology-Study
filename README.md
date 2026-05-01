@@ -83,6 +83,6 @@ COVID-Radiology-Study/
 ## Running locally
 
 ```bash
-pip install -r requirement.txt
+pip install -r requirements.txt
 python -m src.run --config configs/default.yaml
 ```
