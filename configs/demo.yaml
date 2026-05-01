@@ -1,0 +1,93 @@
+# ============================================================
+# Synthetic demo config
+# This config is intentionally small and public-data friendly.
+# It validates that the project pipeline can run end-to-end
+# without requiring protected clinical data.
+# ============================================================
+
+project:
+  name: "covid-radiology-study"
+  random_seed: 20
+  output_dir: "outputs/demo"
+  run_name: "synthetic_demo"
+
+data:
+  input_csv: "data/synthetic/demo_cxr_impressions.csv"
+  id_col: "patient_id"
+  study_col: "study_id"
+  text_col: "impression"
+  target_col: "covid_pos"
+
+text_processing:
+  lowercase: true
+  normalize_whitespace: true
+
+radiology_features:
+  categories:
+    - "catheter"
+    - "pleural space"
+    - "air trapping"
+    - "atelectasis"
+    - "neurologic"
+    - "congenital"
+    - "pneumonia"
+    - "edema"
+    - "effusion"
+    - "vascular congestion"
+    - "small airways disease"
+    - "pneumothorax"
+
+  synonym_map:
+    "line": "catheter"
+    "picc": "catheter"
+    "small airway disease": "small airways disease"
+    "small airways reactivity": "small airways disease"
+    "bronchial wall thickening": "small airways disease"
+    "peribronchial thickening": "small airways disease"
+    "consolidation": "pneumonia"
+    "infiltrate": "pneumonia"
+    "opacity": "pneumonia"
+    "opacities": "pneumonia"
+
+  desired_feature_order:
+    - "air trapping"
+    - "atelectasis"
+    - "catheter"
+    - "congenital"
+    - "edema"
+    - "effusion"
+    - "neurologic"
+    - "pleural space"
+    - "pneumonia"
+    - "pneumothorax"
+    - "small airways disease"
+    - "vascular congestion"
+
+features:
+  include:
+    - "radiology_features"
+
+splits:
+  strategy: "train_test_split"
+  test_size: 0.25
+  stratify: true
+  random_state: 20
+
+model:
+  type: "random_forest"
+  params:
+    n_estimators: 100
+    class_weight: "balanced"
+    random_state: 20
+    n_jobs: -1
+
+evaluation:
+  threshold:
+    enabled: true
+    method: "default_0.5"
+
+logging:
+  save_metrics_csv: true
+  save_model: true
+  save_predictions: true
+  verbose: true

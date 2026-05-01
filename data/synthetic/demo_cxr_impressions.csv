@@ -1,0 +1,13 @@
+patient_id,study_id,impression,covid_pos
+P001,S001,"No focal consolidation. Lungs are clear. No pleural effusion.",0
+P002,S002,"Mild bilateral perihilar opacities. No pneumothorax.",1
+P003,S003,"Patchy right lower lobe opacity concerning for pneumonia.",1
+P004,S004,"Low lung volumes with mild bibasilar atelectatic change.",0
+P005,S005,"Diffuse bilateral hazy airspace opacities, greater in the lower lungs.",1
+P006,S006,"Normal chest radiograph. No acute cardiopulmonary abnormality.",0
+P007,S007,"Mild interstitial prominence without focal infiltrate.",1
+P008,S008,"Left basilar opacity may represent atelectasis or developing infiltrate.",1
+P009,S009,"Clear lungs. Cardiomediastinal silhouette is within normal size limits.",0
+P010,S010,"Bilateral patchy airspace disease compatible with viral pneumonia.",1
+P011,S011,"No acute findings. No consolidation, edema, or effusion.",0
+P012,S012,"Subtle peribronchial thickening. No focal airspace disease.",0
