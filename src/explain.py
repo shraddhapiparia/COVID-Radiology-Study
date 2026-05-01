@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import Any, Dict
 import numpy as np
 import pandas as pd
-import shap
-
 from .config import deep_get
 
 
@@ -20,6 +18,8 @@ def shap_summary(cfg: Dict[str, Any], fitted_estimator, X: pd.DataFrame, out_pat
         Xs = X.sample(n=max_samples, random_state=rs)
     else:
         Xs = X
+
+    import shap
 
     model = fitted_estimator.best_estimator_ if hasattr(fitted_estimator, "best_estimator_") else fitted_estimator
     # TreeExplainer works on the final RF, but we need transformed features for full correctness.

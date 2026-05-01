@@ -17,9 +17,13 @@ def load_dataset(cfg: Dict[str, Any]) -> pd.DataFrame:
       - data.paths (multiple CSVs) -> merged using pat_id 
     """
 
+    input_csv = deep_get(cfg, "data.input_csv")
+    if input_csv:
+        return _read_csv(input_csv)
+
     paths = deep_get(cfg, "data.paths", {})
     if not isinstance(paths, dict) or not paths:
-        raise ValueError("Provide data.paths in YAML.")
+        raise ValueError("Provide either data.input_csv or data.paths in YAML.")
 
     dfs: List[Tuple[str, pd.DataFrame]] = []
     for name, p in paths.items():

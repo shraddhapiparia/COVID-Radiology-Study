@@ -12,12 +12,15 @@ def _cols(cfg, key, default=None):
 
 
 def resolve_feature_columns(df: pd.DataFrame, cfg: Dict[str, Any]) -> List[str]:
-    model_set = int(deep_get(cfg, "features.model_set", 1))
-    sets = deep_get(cfg, "features.sets", {})
-    if model_set not in sets:
-        raise ValueError(f"features.model_set={model_set} not present in features.sets")
+    include = deep_get(cfg, "features.include", None)
 
-    include = sets[model_set].get("include", [])
+    if include is None:
+        model_set = int(deep_get(cfg, "features.model_set", 1))
+        sets = deep_get(cfg, "features.sets", {})
+        if model_set not in sets:
+            raise ValueError(f"features.model_set={model_set} not present in features.sets")
+
+        include = sets[model_set].get("include", [])
 
     cols: List[str] = []
     if "radiology_features" in include:

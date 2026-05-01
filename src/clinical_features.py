@@ -149,9 +149,16 @@ def build_radiology_features_from_impression(
                 lexicon[k] = list(v.get("phrases") or [])
             elif isinstance(v, list):
                 lexicon[k] = list(v)
-    # If no explicit lexicon, use category name itself
+    # If no explicit lexicon, use category name itself. Also use synonym_map keys
+    # as phrases for their canonical category, so "opacity" can activate "pneumonia".
     for c in categories:
         lexicon.setdefault(c, [c])
+
+    for phrase, canonical in synonym_map.items():
+        if canonical in categories:
+            lexicon.setdefault(canonical, [canonical])
+            if phrase not in lexicon[canonical]:
+                lexicon[canonical].append(phrase)
 
     # Matching + negation config
     use_word_boundaries = bool(deep_get(cfg, "text_processing.matching.use_word_boundaries", True))

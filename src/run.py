@@ -9,9 +9,20 @@ from .config import load_yaml, make_run_dirs, deep_get
 from .io_data import load_dataset
 from .preprocess import report_missingness, build_new_finding_from_text, apply_variant_proxy, drop_or_keep
 from .features import resolve_feature_columns
+from .clinical_features import build_radiology_features_from_impression
 from .modeling import build_pipeline, split_data, fit_with_grid_search, choose_threshold
 from .evaluate import compute_metrics, plot_roc
 from .explain import shap_summary
+
+
+def _selected_feature_groups(cfg):
+    include = deep_get(cfg, "features.include", None)
+    if include is not None:
+        return include
+
+    model_set = int(deep_get(cfg, "features.model_set", 1))
+    sets = deep_get(cfg, "features.sets", {})
+    return sets.get(model_set, {}).get("include", [])
 
 
 def main():
@@ -32,6 +43,10 @@ def main():
     df = build_new_finding_from_text(df, cfg)
     df = apply_variant_proxy(df, cfg)
     df = drop_or_keep(df, cfg)
+
+    selected_groups = _selected_feature_groups(cfg)
+    if "radiology_features" in selected_groups:
+        df = build_radiology_features_from_impression(df, cfg)
 
     # Resolve features
     feature_cols = resolve_feature_columns(df, cfg)

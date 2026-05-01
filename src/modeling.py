@@ -9,7 +9,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import GroupKFold, GroupShuffleSplit, GridSearchCV
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit, GridSearchCV, train_test_split
 from sklearn.metrics import f1_score, roc_auc_score, precision_recall_fscore_support
 from sklearn.ensemble import RandomForestClassifier
 
@@ -92,7 +92,17 @@ def split_data(df: pd.DataFrame, cfg: Dict[str, Any], feature_cols: list[str]) -
 
     groups = df[group_col].to_numpy() if group_col and group_col in df.columns else None
 
-    if strategy == "group_shuffle":
+    if strategy == "train_test_split":
+        stratify_y = y if bool(deep_get(cfg, "splits.stratify", False)) else None
+        idx = np.arange(len(df))
+        train_idx, test_idx = train_test_split(
+            idx,
+            test_size=test_size,
+            random_state=rs,
+            stratify=stratify_y,
+        )
+
+    elif strategy == "group_shuffle":
         if groups is None:
             raise ValueError("group_shuffle requires splits.group_col present in dataframe.")
         gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=rs)
@@ -106,7 +116,7 @@ def split_data(df: pd.DataFrame, cfg: Dict[str, Any], feature_cols: list[str]) -
         train_idx, test_idx = next(gkf.split(X, y, groups=groups))
 
     else:
-        raise ValueError(f"Unsupported splits.strategy='{strategy}'. Use group_shuffle or group_kfold.")
+        raise ValueError(f"Unsupported splits.strategy='{strategy}'. Use train_test_split, group_shuffle, or group_kfold.")
 
     X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
     y_train, y_test = y[train_idx], y[test_idx]
