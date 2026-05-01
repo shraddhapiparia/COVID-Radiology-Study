@@ -1,0 +1,37 @@
+# macOS / system files
+.DS_Store
+__MACOSX/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local/private data
+data/
+!data/README.md
+!data/synthetic/
+!data/synthetic/**
+
+# Outputs and generated artifacts
+outputs/
+results/
+figures/generated/
+models/
+*.pkl
+*.joblib
+
+# Logs
+*.log
+
+# IDE/editor
+.vscode/
+.idea/
